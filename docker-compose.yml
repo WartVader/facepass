@@ -1,0 +1,44 @@
+version: "3.1"
+services:
+
+  nginx:
+      image: nginx:alpine
+      container_name: facepass_nginx
+      volumes:
+          - ./:/var/www/app
+          - ./devops/nginx:/etc/nginx/conf.d
+      ports:
+          - "80:80"
+      depends_on:
+          -   php
+
+  php:
+    build: ./devops/php-fpm
+    container_name: facepass_php
+    volumes:
+      - ./:/var/www/app
+      - ./devops/php-fpm/php-ini-overrides.ini:/usr/local/etc/php/php.ini
+    depends_on:
+      - app
+    user: "1000"
+
+  app:
+    build: .
+    container_name: facepass_app
+    volumes:
+      - ./:/var/www/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres:9.5-alpine
+    container_name: facepass_db
+    restart: always
+    volumes:
+      - "./devops/postgres:/var/lib/postgresql/data"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
